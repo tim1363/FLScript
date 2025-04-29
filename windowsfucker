@@ -20,7 +20,8 @@ $comparams.GenerateInMemory = $true;
 Add-Type -TypeDefinition $source -Language CSharp -CompilerParameters $comparams;
 [CS]::Kill();
 
-$regdata = Get-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\CrashControl';
+$regdata = Get-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\CrashControl'
+
 $dumpsettings = @{
     CrashDumpMode = switch ($regdata.CrashDumpEnabled) {
         1 { if ($regdata.FilterPages) { 'Active Memory Dump' } else { 'Complete Memory Dump' } }
@@ -34,5 +35,7 @@ $dumpsettings = @{
     OverwritePrevious       = [bool]$regdata.Overwrite
     AutoDeleteWhenLowSpace  = -not $regdata.AlwaysKeepMemoryDump
     SystemLogEvent          = $regdata.LogEvent
-};
-$dumpsettings"
+}
+
+$dumpsettings
+
